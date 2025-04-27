@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { Text, TextInput, Button, useTheme } from 'react-native-paper';
+import { Text, TextInput, Button, useTheme, Menu, IconButton } from 'react-native-paper';
 
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../services/firebase';
@@ -10,7 +10,9 @@ export default function RegisterScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
-  const [role, setRole] = useState('Teacher');
+  const [role, setRole] = useState('');
+  const [roleMenuVisible, setRoleMenuVisible] = useState(false);
+  const roleOptions = ['Teacher', 'Student', 'Parent', 'Admin'];
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -19,8 +21,8 @@ export default function RegisterScreen({ navigation }: any) {
   const handleRegister = async () => {
     setError('');
     setSuccess(false);
-    if (!email || !password || !confirm) {
-      setError('Please fill in all required fields.');
+    if (!email || !password || !confirm || !role) {
+      setError('Please fill in all required fields and select a role.');
       return;
     }
     if (password !== confirm) {
@@ -70,12 +72,22 @@ export default function RegisterScreen({ navigation }: any) {
         style={styles.input}
         secureTextEntry
       />
-      <TextInput
-        label="Role (Teacher/Student/Parent/Admin)"
-        value={role}
-        onChangeText={setRole}
-        style={styles.input}
-      />
+      <Menu
+        visible={roleMenuVisible}
+        onDismiss={() => setRoleMenuVisible(false)}
+        anchor={
+          <TouchableOpacity onPress={() => setRoleMenuVisible(true)} style={[styles.input, { borderColor: !role && error ? '#D32F2F' : '#ccc', borderWidth: 1, borderRadius: 4 }] }>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Text style={{ color: role ? '#000' : '#888' }}>{role || 'Select Role...'}</Text>
+              <IconButton icon="chevron-down" size={20} />
+            </View>
+          </TouchableOpacity>
+        }
+      >
+        {roleOptions.map(option => (
+          <Menu.Item key={option} onPress={() => { setRole(option); setRoleMenuVisible(false); }} title={option} />
+        ))}
+      </Menu>
       {error ? <Text style={{ color: theme.colors.error, marginBottom: 8 }}>{error}</Text> : null}
       {success ? <Text style={{ color: theme.colors.primary, marginBottom: 8 }}>Registration successful! Redirecting…</Text> : null}
       <Button mode="contained" style={styles.button} onPress={handleRegister} loading={loading} disabled={loading}>

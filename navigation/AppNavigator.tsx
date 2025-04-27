@@ -6,18 +6,12 @@ import { StyleSheet } from 'react-native';
 import { theme as paperTheme } from '../theme/theme';
 import AuthStack from './AuthStack';
 import { useAuth } from '../context/AuthContext';
-import { ActivityIndicator } from 'react-native-paper';
+import { ActivityIndicator, IconButton, Dialog, Portal, Button as PaperButton } from 'react-native-paper';
+import HomeScreen from '../screens/HomeScreen';
+
+
 
 const Stack = createNativeStackNavigator();
-
-const PlaceholderScreen = ({ title }: { title: string }) => {
-  const theme = useTheme();
-  return (
-    <Surface style={[styles.surface, { backgroundColor: theme.colors.background }]}> 
-      <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>{title}</Text>
-    </Surface>
-  );
-};
 
 // Sync navigation theme with Paper theme
 const navigationTheme: NavigationThemeType = {
@@ -62,9 +56,14 @@ export default function AppNavigator() {
             headerTitleStyle: { fontWeight: 'bold' },
           }}
         >
-          <Stack.Screen name="Home" options={{ title: 'MCC Home' }}>
-            {() => <PlaceholderScreen title="Welcome to MCC!" />}
-          </Stack.Screen>
+          <Stack.Screen 
+            name="Home" 
+            component={HomeScreen}
+            options={{
+              headerShown: false,
+              title: 'MCC Home',
+            }}
+          />
         </Stack.Navigator>
       ) : (
         <AuthStack />
