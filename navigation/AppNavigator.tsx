@@ -5,6 +5,8 @@ import { Surface, Text, useTheme } from 'react-native-paper';
 import { StyleSheet } from 'react-native';
 import { theme as paperTheme } from '../theme/theme';
 import AuthStack from './AuthStack';
+import { useAuth } from '../context/AuthContext';
+import { ActivityIndicator } from 'react-native-paper';
 
 const Stack = createNativeStackNavigator();
 
@@ -40,12 +42,19 @@ const styles = StyleSheet.create({
 });
 
 export default function AppNavigator() {
-  // TODO: Replace with real auth state
-  const isAuthenticated = false;
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <Surface style={[styles.surface, { backgroundColor: paperTheme.colors.background }]}> 
+        <ActivityIndicator animating color={paperTheme.colors.primary} />
+      </Surface>
+    );
+  }
 
   return (
     <NavigationContainer theme={navigationTheme}>
-      {isAuthenticated ? (
+      {user ? (
         <Stack.Navigator
           screenOptions={{
             headerStyle: { backgroundColor: paperTheme.colors.primary },
