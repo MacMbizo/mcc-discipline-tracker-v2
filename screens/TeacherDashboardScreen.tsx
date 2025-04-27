@@ -119,11 +119,19 @@ export default function TeacherDashboardScreen() {
               mode="contained"
               icon="star"
               style={styles.actionBtn}
-              onPress={() => navigation.navigate('RecentLogsScreen')}
+              onPress={() => navigation.navigate('MeritFormScreen')}
             >
-              View Recent Activity
+              Log Merit
             </Button>
           </View>
+          <Button
+            mode="outlined"
+            icon="history"
+            style={[styles.actionBtn, { alignSelf: 'center', marginTop: 12, width: '80%' }]}
+            onPress={() => navigation.navigate('RecentLogsScreen')}
+          >
+            View Recent Activity
+          </Button>
         </ScrollView>
       </View>
       <Portal>

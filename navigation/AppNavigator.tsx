@@ -65,7 +65,7 @@ export default function AppNavigator() {
             name="TeacherDashboard" 
             component={TeacherDashboardScreen}
             options={{
-              headerShown: true,
+              headerShown: false,
               title: 'Dashboard',
             }}
           />
