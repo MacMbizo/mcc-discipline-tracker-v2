@@ -8,6 +8,11 @@ import AuthStack from './AuthStack';
 import { useAuth } from '../context/AuthContext';
 import { ActivityIndicator, IconButton, Dialog, Portal, Button as PaperButton } from 'react-native-paper';
 import HomeScreen from '../screens/HomeScreen';
+import TeacherDashboardScreen from '../screens/TeacherDashboardScreen';
+import IncidentFormScreen from '../screens/IncidentFormScreen';
+import MeritFormScreen from '../screens/MeritFormScreen';
+import StudentSearchScreen from '../screens/StudentSearchScreen';
+import RecentLogsScreen from '../screens/RecentLogsScreen';
 
 
 
@@ -57,11 +62,47 @@ export default function AppNavigator() {
           }}
         >
           <Stack.Screen 
+            name="TeacherDashboard" 
+            component={TeacherDashboardScreen}
+            options={{
+              headerShown: true,
+              title: 'Dashboard',
+            }}
+          />
+          <Stack.Screen 
             name="Home" 
             component={HomeScreen}
             options={{
               headerShown: false,
               title: 'MCC Home',
+            }}
+          />
+          <Stack.Screen 
+            name="IncidentFormScreen" 
+            component={IncidentFormScreen}
+            options={{
+              title: 'Log Incident',
+            }}
+          />
+          <Stack.Screen 
+            name="MeritFormScreen" 
+            component={MeritFormScreen}
+            options={{
+              title: 'Log Merit',
+            }}
+          />
+          <Stack.Screen 
+            name="StudentSearchScreen" 
+            component={StudentSearchScreen}
+            options={{
+              title: 'Search Students',
+            }}
+          />
+          <Stack.Screen 
+            name="RecentLogsScreen" 
+            component={RecentLogsScreen}
+            options={{
+              title: 'Recent Activity',
             }}
           />
         </Stack.Navigator>
