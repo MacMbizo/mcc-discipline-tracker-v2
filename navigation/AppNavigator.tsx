@@ -1,24 +1,65 @@
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme as NavigationDefaultTheme, Theme as NavigationThemeType } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { View, Text } from 'react-native';
+import { Surface, Text, useTheme } from 'react-native-paper';
+import { StyleSheet } from 'react-native';
+import { theme as paperTheme } from '../theme/theme';
+import AuthStack from './AuthStack';
 
 const Stack = createNativeStackNavigator();
 
-const PlaceholderScreen = ({ title }: { title: string }) => (
-  <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-    <Text>{title}</Text>
-  </View>
-);
+const PlaceholderScreen = ({ title }: { title: string }) => {
+  const theme = useTheme();
+  return (
+    <Surface style={[styles.surface, { backgroundColor: theme.colors.background }]}> 
+      <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>{title}</Text>
+    </Surface>
+  );
+};
+
+// Sync navigation theme with Paper theme
+const navigationTheme: NavigationThemeType = {
+  ...NavigationDefaultTheme,
+  colors: {
+    ...NavigationDefaultTheme.colors,
+    primary: paperTheme.colors.primary,
+    background: paperTheme.colors.background,
+    card: paperTheme.colors.primary, // header background
+    text: paperTheme.colors.onPrimary, // header text
+    border: paperTheme.colors.primary,
+    notification: paperTheme.colors.secondary,
+  },
+};
+
+const styles = StyleSheet.create({
+  surface: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});
 
 export default function AppNavigator() {
+  // TODO: Replace with real auth state
+  const isAuthenticated = false;
+
   return (
-    <NavigationContainer>
-      <Stack.Navigator>
-        <Stack.Screen name="Home" options={{ title: 'MCC Home' }}>
-          {() => <PlaceholderScreen title="Welcome to MCC!" />}
-        </Stack.Screen>
-      </Stack.Navigator>
+    <NavigationContainer theme={navigationTheme}>
+      {isAuthenticated ? (
+        <Stack.Navigator
+          screenOptions={{
+            headerStyle: { backgroundColor: paperTheme.colors.primary },
+            headerTintColor: paperTheme.colors.onPrimary,
+            headerTitleStyle: { fontWeight: 'bold' },
+          }}
+        >
+          <Stack.Screen name="Home" options={{ title: 'MCC Home' }}>
+            {() => <PlaceholderScreen title="Welcome to MCC!" />}
+          </Stack.Screen>
+        </Stack.Navigator>
+      ) : (
+        <AuthStack />
+      )}
     </NavigationContainer>
   );
 }
