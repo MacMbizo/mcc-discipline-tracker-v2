@@ -1,0 +1,14 @@
+# Configuration for Probot Stale - https://github.com/probot/stale
+# Closes issues and PRs after 60 days of inactivity
+
+staleLabel: stale
+exemptLabels:
+  - pinned
+  - security
+daysUntilStale: 60
+daysUntilClose: 7
+only: issues
+markComment: >
+  This issue has been automatically marked as stale because it has not had recent activity. It will be closed if no further activity occurs.
+closeComment: >
+  This issue was closed because it has been inactive for 7 days since being marked as stale.
