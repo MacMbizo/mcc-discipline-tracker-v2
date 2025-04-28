@@ -8,6 +8,7 @@
     "esModuleInterop": true,
     "module": "nodenext",
     "moduleResolution": "nodenext",
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "jsx": "react-native"
   }
 }
