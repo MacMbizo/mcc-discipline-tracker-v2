@@ -1,8 +1,6 @@
 {
-
   "compilerOptions": {
     "strict": true,
-
     "target": "es2020",
     "resolveJsonModule": true,
     "esModuleInterop": true,
@@ -10,5 +8,6 @@
     "moduleResolution": "nodenext",
     "allowSyntheticDefaultImports": true,
     "jsx": "react-native"
-  }
+  },
+  "extends": "expo/tsconfig.base"
 }
