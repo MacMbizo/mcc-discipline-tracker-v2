@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavigationContainer, DefaultTheme as NavigationDefaultTheme, Theme as NavigationThemeType } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import DrawerNavigator from './DrawerNavigator';
 import { Surface, Text, useTheme } from 'react-native-paper';
 import { StyleSheet } from 'react-native';
 import { theme as paperTheme } from '../theme/theme';
@@ -62,48 +63,9 @@ export default function AppNavigator() {
           }}
         >
           <Stack.Screen 
-            name="TeacherDashboard" 
-            component={TeacherDashboardScreen}
-            options={{
-              headerShown: false,
-              title: 'Dashboard',
-            }}
-          />
-          <Stack.Screen 
-            name="Home" 
-            component={HomeScreen}
-            options={{
-              headerShown: false,
-              title: 'MCC Home',
-            }}
-          />
-          <Stack.Screen 
-            name="IncidentFormScreen" 
-            component={IncidentFormScreen}
-            options={{
-              title: 'Log Incident',
-            }}
-          />
-          <Stack.Screen 
-            name="MeritFormScreen" 
-            component={MeritFormScreen}
-            options={{
-              title: 'Log Merit',
-            }}
-          />
-          <Stack.Screen 
-            name="StudentSearchScreen" 
-            component={StudentSearchScreen}
-            options={{
-              title: 'Search Students',
-            }}
-          />
-          <Stack.Screen 
-            name="RecentLogsScreen" 
-            component={RecentLogsScreen}
-            options={{
-              title: 'Recent Activity',
-            }}
+            name="Drawer" 
+            component={DrawerNavigator}
+            options={{ headerShown: false }}
           />
         </Stack.Navigator>
       ) : (

@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { Text, TextInput, Button, useTheme, Menu, IconButton } from 'react-native-paper';
+import { useSnackbar } from '../../components/GlobalSnackbar';
 
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../../services/firebase';
+import { auth, db } from '../../services/firebase';
+import { doc, setDoc } from 'firebase/firestore';
 
 export default function RegisterScreen({ navigation }: any) {
   const [name, setName] = useState('');
@@ -17,6 +19,7 @@ export default function RegisterScreen({ navigation }: any) {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const theme = useTheme();
+  const { showSnackbar } = useSnackbar();
 
   const handleRegister = async () => {
     setError('');
@@ -31,11 +34,21 @@ export default function RegisterScreen({ navigation }: any) {
     }
     setLoading(true);
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      const user = cred.user;
+      await setDoc(doc(db, 'users', user.uid), {
+        uid: user.uid,
+        name,
+        email,
+        role,
+        createdAt: new Date().toISOString(),
+      }, { merge: true });
       setSuccess(true);
+      showSnackbar('Registration successful!', 3000);
       setTimeout(() => navigation.navigate('Login'), 1000);
     } catch (e: any) {
       setError(e.message || 'Registration failed');
+      showSnackbar(e.message || 'Registration failed', 3000);
     } finally {
       setLoading(false);
     }

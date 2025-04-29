@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
-import { Text, Button, TextInput, HelperText, Menu, ActivityIndicator, List } from 'react-native-paper';
+import { Text, Button, TextInput, HelperText, Menu, ActivityIndicator, List, Avatar } from 'react-native-paper';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { useSnackbar } from '../components/GlobalSnackbar';
 import { db } from '../services/firebase';
+import { useAuth } from '../context/AuthContext';
 import { collection, getDocs, addDoc, Timestamp } from 'firebase/firestore';
 
 interface Student {
@@ -22,8 +24,10 @@ interface Misdemeanor {
 type LocationType = 'Hostel' | 'Main School' | 'Both';
 
 export default function IncidentFormScreen() {
+  const { user } = useAuth();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
+  const { showSnackbar } = useSnackbar();
 
   const [student, setStudent] = useState<Student | null>(route?.params?.student || null);
 
@@ -105,14 +109,18 @@ export default function IncidentFormScreen() {
         sanctionValue: selectedSanction.value,
         notes,
         createdAt: Timestamp.now(),
-        // Optionally add teacherId, etc.
+        createdBy: user?.uid || null, // Track the teacher/admin who created the incident
+        createdByName: user?.displayName || user?.uid || '',
+        createdByRole: user?.role || '',
       });
       setSubmitting(false);
+      showSnackbar('Incident submitted!', 3000);
       navigation.goBack();
     } catch (e) {
       console.error('Failed to submit incident:', e);
       setError('Failed to submit incident.');
       setSubmitting(false);
+      showSnackbar('Failed to submit incident.', 3000);
     }
   };
 
@@ -165,7 +173,18 @@ export default function IncidentFormScreen() {
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <Text variant="titleLarge" style={{ marginBottom: 16 }}>Log Incident</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+        <Text variant="titleLarge" style={{ flex: 1 }}>Log Incident</Text>
+        <Button
+          icon="clock-outline"
+          mode="text"
+          onPress={() => navigation.navigate('RecentLogsScreen')}
+          compact
+          style={{ marginLeft: 8 }}
+        >
+          Recent
+        </Button>
+      </View>
 
         {/* Student Selection */}
         <List.Section>
@@ -297,9 +316,12 @@ export default function IncidentFormScreen() {
           Submit Incident
         </Button>
       </ScrollView>
+
     </KeyboardAvoidingView>
   );
 }
+
+
 
 const styles = StyleSheet.create({
   container: { flexGrow: 1, padding: 16, backgroundColor: '#fff' },

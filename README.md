@@ -1,4 +1,11 @@
-# Midlands Christian College Discipline Tracker App (mcc-app-v3)
+# Midlands Christian College Discipline Tracker
+
+## Changelog (2025-04-29)
+- Sanctions dropdown in Incident Form now sorts sanctions in natural order (1st, 2nd, 3rd, ...).
+- Bug fixes to Incident Form submission and improved error handling.
+- Debug UI removed from production.
+- General UI/UX improvements for a smoother incident logging workflow.
+ App (mcc-app-v3)
 
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/MacMbizo/mcc-discipline-tracker-v2/main.yml?branch=master)](https://github.com/MacMbizo/mcc-discipline-tracker-v2/actions)
 [![GitHub last commit](https://img.shields.io/github/last-commit/MacMbizo/mcc-discipline-tracker-v2)](https://github.com/MacMbizo/mcc-discipline-tracker-v2/commits/master)

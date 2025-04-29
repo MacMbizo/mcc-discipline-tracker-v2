@@ -1,9 +1,17 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, onAuthStateChanged, signOut } from 'firebase/auth';
-import { auth } from '../services/firebase';
+import { auth, db } from '../services/firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+
+interface EnrichedUser extends User {
+  displayName: string | null;
+  role: string | null;
+  email: string | null;
+  [key: string]: any;
+}
 
 interface AuthContextType {
-  user: User | null;
+  user: EnrichedUser | null;
   loading: boolean;
   logout: () => Promise<void>;
 }
@@ -17,12 +25,32 @@ const AuthContext = createContext<AuthContextType>({
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<EnrichedUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        // Update user info in Firestore on login
+        const userRef = doc(db, 'users', firebaseUser.uid);
+        // Optionally update Firestore with latest email/displayName
+        await setDoc(userRef, {
+          email: firebaseUser.email,
+          displayName: firebaseUser.displayName || '',
+        }, { merge: true });
+        // Fetch Firestore user data
+        const userSnap = await getDoc(userRef);
+        const firestoreData = userSnap.exists() ? userSnap.data() : {};
+        setUser({
+          ...firebaseUser,
+          ...firestoreData,
+          displayName: firestoreData.displayName ?? firebaseUser.displayName ?? null,
+          email: firestoreData.email ?? firebaseUser.email ?? null,
+          role: firestoreData.role ?? null,
+        });
+      } else {
+        setUser(null);
+      }
       setLoading(false);
     });
     return unsubscribe;

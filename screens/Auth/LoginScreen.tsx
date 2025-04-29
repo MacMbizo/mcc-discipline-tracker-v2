@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { Text, TextInput, Button, useTheme } from 'react-native-paper';
+import { useSnackbar } from '../../components/GlobalSnackbar';
 
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../services/firebase';
@@ -11,15 +12,18 @@ export default function LoginScreen({ navigation }: any) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const theme = useTheme();
+  const { showSnackbar } = useSnackbar();
 
   const handleLogin = async () => {
     setLoading(true);
     setError('');
     try {
       await signInWithEmailAndPassword(auth, email, password);
+      showSnackbar('Login successful!', 2000);
       // Navigation will be handled by auth state in AppNavigator
     } catch (e: any) {
       setError(e.message || 'Login failed');
+      showSnackbar(e.message || 'Login failed', 3000);
     } finally {
       setLoading(false);
     }
