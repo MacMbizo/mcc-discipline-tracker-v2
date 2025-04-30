@@ -8,23 +8,54 @@ import { useAuth } from '../context/AuthContext';
 import { db } from '../services/firebase';
 import { collection, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
 
-function StatCard({ label, value, color, icon }: { label: string; value: number; color: string; icon: string }) {
+function StatCard({ label, value, color, icon, borderColor = '#1976d2', iconColor = '#1976d2' }: { label: string; value: number; color: string; icon: string; borderColor?: string; iconColor?: string }) {
   return (
-    <View style={{ backgroundColor: color, borderRadius: 12, padding: 14, minWidth: 80, alignItems: 'center', marginHorizontal: 3, flex: 1 }}>
-      <MaterialCommunityIcons name={icon} size={28} color="#fff" />
-      <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 20 }}>{value}</Text>
-      <Text style={{ color: '#fff', fontSize: 13, marginTop: 2 }}>{label}</Text>
+    <View style={{
+      backgroundColor: color,
+      borderRadius: 14,
+      paddingVertical: 14,
+      paddingHorizontal: 8,
+      minWidth: 78,
+      alignItems: 'center',
+      marginHorizontal: 3,
+      flex: 1,
+      borderWidth: 2,
+      borderColor,
+      shadowColor: borderColor,
+      shadowOpacity: 0.08,
+      shadowRadius: 2,
+      elevation: 1,
+    }}>
+      <MaterialCommunityIcons name={icon} size={28} color={iconColor} />
+      <Text style={{ color: iconColor, fontWeight: 'bold', fontSize: 20, marginTop: 3 }}>{value}</Text>
+      <Text style={{ color: '#0D1B2A', fontSize: 13, marginTop: 2, fontWeight: '600' }}>{label}</Text>
     </View>
   );
 }
 
-function ShortcutButton({ label, icon, color, onPress }: { label: string; icon: string; color: string; onPress: () => void }) {
+function ShortcutButton({ label, icon, color, onPress, outline = false }: { label: string; icon: string; color: string; onPress: () => void; outline?: boolean }) {
   return (
     <TouchableOpacity onPress={onPress} style={{ alignItems: 'center', marginHorizontal: 8 }}>
-      <View style={{ backgroundColor: color, borderRadius: 32, padding: 12, marginBottom: 6 }}>
-        <MaterialCommunityIcons name={icon} size={28} color="#fff" />
+      <View style={outline ? {
+        backgroundColor: '#fff',
+        borderRadius: 32,
+        padding: 12,
+        marginBottom: 6,
+        borderWidth: 2,
+        borderColor: color,
+        shadowColor: color,
+        shadowOpacity: 0.08,
+        shadowRadius: 2,
+        elevation: 1,
+      } : {
+        backgroundColor: color,
+        borderRadius: 32,
+        padding: 12,
+        marginBottom: 6,
+      }}>
+        <MaterialCommunityIcons name={icon} size={28} color={outline ? color : '#fff'} />
       </View>
-      <Text style={{ color, fontWeight: 'bold', fontSize: 14 }}>{label}</Text>
+      <Text style={{ color: outline ? color : '#fff', fontWeight: 'bold', fontSize: 14 }}>{label}</Text>
     </TouchableOpacity>
   );
 }
@@ -120,13 +151,15 @@ export default function HomeScreen() {
   return (
     <Surface style={[styles.surface, { backgroundColor: theme.colors.background, padding: 0 }]}> 
       <View style={{ flex: 1 }}>
-        {/* Custom Header */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#d32f2f', height: 90, width: '100%', alignSelf: 'stretch', paddingHorizontal: 16, paddingTop: 12 }}>
+        {/* Slim Red Accent Header */}
+        <View style={{ backgroundColor: '#d32f2f', height: 6, width: '100%' }} />
+        {/* Greeting and Logo */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingTop: 18, marginBottom: 10 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <View style={{ backgroundColor: '#fff', borderRadius: 32, padding: 4, marginRight: 12 }}>
-              <Image source={require('../assets/mcc.ac.png')} style={{ width: 48, height: 48, borderRadius: 24 }} resizeMode="contain" />
+            <View style={{ backgroundColor: '#fff', borderRadius: 32, padding: 4, marginRight: 12, borderWidth: 2, borderColor: '#1976d2' }}>
+              <Image source={require('../assets/mcc.ac.png')} style={{ width: 44, height: 44, borderRadius: 22 }} resizeMode="contain" />
             </View>
-            <Text style={{ color: '#fff', fontSize: 26, fontWeight: 'bold', letterSpacing: 1 }}>MCC Dashboard</Text>
+            <Text style={{ color: '#0D1B2A', fontSize: 22, fontWeight: 'bold', letterSpacing: 1 }}>Good evening, Admin</Text>
           </View>
           <TouchableOpacity
             style={{
@@ -134,40 +167,48 @@ export default function HomeScreen() {
               alignItems: 'center',
               backgroundColor: '#fff',
               borderRadius: 28,
+              borderWidth: 1,
+              borderColor: '#d32f2f',
               paddingVertical: 6,
-              paddingHorizontal: 18,
+              paddingHorizontal: 16,
               marginLeft: 12,
               shadowColor: '#000',
               shadowOffset: { width: 0, height: 1 },
-              shadowOpacity: 0.1,
-              shadowRadius: 2,
-              elevation: 2,
+              shadowOpacity: 0.08,
+              shadowRadius: 1,
+              elevation: 1,
             }}
             onPress={() => setDialogVisible(true)}
             activeOpacity={0.7}
             accessibilityLabel="Logout"
           >
-            <MaterialCommunityIcons name="logout" size={26} color="#d32f2f" style={{ marginRight: 8 }} />
-            <Text style={{ color: '#d32f2f', fontWeight: 'bold', fontSize: 18 }}>Logout</Text>
+            <MaterialCommunityIcons name="logout" size={24} color="#d32f2f" style={{ marginRight: 6 }} />
+            <Text style={{ color: '#d32f2f', fontWeight: 'bold', fontSize: 16 }}>Logout</Text>
           </TouchableOpacity>
         </View>
         {/* Main Content */}
         <View style={{ flex: 1, padding: 16 }}>
-          {/* Stats Cards */}
-          <StatsRow />
-
-          {/* Quick Actions Grid */}
-          <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginBottom: 24 }}>
-            <ShortcutButton label="Log Incident" icon="plus-circle" color="#d32f2f" onPress={() => {}} />
-            <ShortcutButton label="Register User" icon="account-plus" color="#1976d2" onPress={() => {}} />
-            <ShortcutButton label="View Users" icon="account-search" color="#388e3c" onPress={() => {}} />
+          {/* Stats Widgets - Outlined, Minimal */}
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 28 }}>
+            <StatCard label="Users" value={0} color="#fff" icon="account-group-outline" borderColor="#1976d2" iconColor="#1976d2" />
+            <StatCard label="Teachers" value={0} color="#fff" icon="school-outline" borderColor="#d32f2f" iconColor="#d32f2f" />
+            <StatCard label="Students" value={0} color="#fff" icon="account-outline" borderColor="#1976d2" iconColor="#1976d2" />
+            <StatCard label="Incidents" value={0} color="#fff" icon="alert-circle-outline" borderColor="#d32f2f" iconColor="#d32f2f" />
+            <StatCard label="Merits" value={0} color="#fff" icon="star-outline" borderColor="#1976d2" iconColor="#1976d2" />
           </View>
 
-          {/* Recent Activity Section */}
-          <Surface style={{ padding: 16, backgroundColor: '#fff', borderRadius: 12, elevation: 2 }}>
-            <Text style={{ fontWeight: 'bold', fontSize: 18, color: '#d32f2f', marginBottom: 8 }}>Recent Activity</Text>
+          {/* Quick Actions - Outlined Buttons */}
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 24 }}>
+            <ShortcutButton label="Log Incident" icon="plus-circle-outline" color="#d32f2f" outline onPress={() => {}} />
+            <ShortcutButton label="Register User" icon="account-plus-outline" color="#1976d2" outline onPress={() => {}} />
+            <ShortcutButton label="View Users" icon="account-search-outline" color="#1976d2" outline onPress={() => {}} />
+          </View>
+
+          {/* Recent Activity Section - Minimal, Outlined */}
+          <View style={{ padding: 14, backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: '#e3e7ef', marginBottom: 18 }}>
+            <Text style={{ fontWeight: 'bold', fontSize: 16, color: '#d32f2f', marginBottom: 8, letterSpacing: 0.5 }}>RECENT ACTIVITY</Text>
             <RecentActivity />
-          </Surface>
+          </View>
         </View>
         <Portal>
           <Dialog visible={dialogVisible} onDismiss={handleDismiss}>

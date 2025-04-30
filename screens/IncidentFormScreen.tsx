@@ -324,5 +324,61 @@ export default function IncidentFormScreen() {
 
 
 const styles = StyleSheet.create({
-  container: { flexGrow: 1, padding: 16, backgroundColor: '#fff' },
+  container: {
+    flexGrow: 1,
+    padding: 16,
+    backgroundColor: '#fff',
+  },
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    borderWidth: 2,
+    borderColor: '#e3e7ef',
+    padding: 14,
+    marginBottom: 18,
+    shadowColor: '#1976d2',
+    shadowOpacity: 0.06,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  sectionHeader: {
+    color: '#d32f2f',
+    fontWeight: 'bold',
+    fontSize: 15,
+    marginBottom: 6,
+    letterSpacing: 0.5,
+  },
+  outlinedButton: {
+    borderColor: '#1976d2',
+    borderWidth: 2,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  containedButton: {
+    backgroundColor: '#d32f2f',
+    borderRadius: 8,
+    marginTop: 12,
+  },
+  selectButton: {
+    borderColor: '#1976d2',
+    borderWidth: 2,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  studentItem: {
+    borderColor: '#1976d2',
+    borderWidth: 2,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  notesInput: {
+    marginBottom: 16,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    borderColor: '#e3e7ef',
+    borderWidth: 2,
+  },
 });

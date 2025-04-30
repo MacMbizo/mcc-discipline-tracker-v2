@@ -15,8 +15,12 @@ export default function DrawerNavigator() {
     <Drawer.Navigator initialRouteName="Home"
       screenOptions={{
         headerShown: false,
-        drawerActiveTintColor: '#d32f2f',
-        drawerLabelStyle: { fontWeight: 'bold' },
+        drawerStyle: { backgroundColor: '#0D1B2A', width: 260 }, // Deep blue
+        drawerActiveTintColor: '#d32f2f', // Red for active icon/text
+        drawerInactiveTintColor: '#fff', // White for inactive
+        drawerActiveBackgroundColor: '#fff', // White background for active
+        drawerLabelStyle: { fontWeight: 'bold', fontSize: 16 },
+        drawerItemStyle: { borderRadius: 8, marginVertical: 2, marginHorizontal: 6, paddingVertical: 2 },
       }}
     >
       <Drawer.Screen name="Home" component={HomeScreen} options={{ title: 'Dashboard', drawerIcon: ({color, size}: {color: string; size: number}) => (<Icon name="view-dashboard-outline" color={color} size={size} />) }} />
