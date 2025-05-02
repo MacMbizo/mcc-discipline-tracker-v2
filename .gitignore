@@ -25,6 +25,9 @@ npm-debug.*
 yarn-debug.*
 yarn-error.*
 
+# Firebase/Google Cloud keys
+scripts/serviceAccountKey.json
+
 # macOS
 .DS_Store
 *.pem

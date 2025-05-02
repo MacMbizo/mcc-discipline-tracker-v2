@@ -53,26 +53,37 @@ export default function StudentSearchScreen({ route }: any) {
     }
   }, [search, students]);
 
+  // Always open profile on tap
   const handleSelect = (student: Student) => {
-    // Navigate back and set the selected student in navigation params
-    navigation.navigate({
-      name: 'IncidentFormScreen',
-      params: { selectedStudent: student },
-      merge: true,
-    });
+    // Direct-to-form navigation if logType is set
+    if (route?.params?.logType === 'merit') {
+      navigation.navigate('MeritFormScreen', { student });
+    } else if (route?.params?.logType === 'incident') {
+      navigation.navigate('IncidentFormScreen', { student });
+    } else {
+      navigation.navigate('StudentProfileScreen', { student });
+    }
   };
+
+  // Handle long press: open profile (redundant, but kept for clarity)
+  const handleProfile = (student: Student) => {
+    navigation.navigate('StudentProfileScreen', { student });
+  };
+
 
   return (
     <View style={styles.container}>
-      <Text variant="titleLarge" style={{ marginBottom: 12 }}>Search Students</Text>
+      <Text variant="titleLarge" style={{ marginBottom: 8 }}>Search Students</Text>
       <TextInput
-        mode="outlined"
-        placeholder="Search by name, ID, or class"
+        label="Search by name, class, or ID"
         value={search}
         onChangeText={setSearch}
         style={{ marginBottom: 12 }}
-        autoFocus
+        mode="outlined"
       />
+      <Text style={{ color: '#888', marginBottom: 6, fontSize: 12 }}>
+        Tap to select for form, long-press for profile
+      </Text>
       {loading ? (
         <ActivityIndicator />
       ) : (
@@ -80,15 +91,15 @@ export default function StudentSearchScreen({ route }: any) {
           data={filtered}
           keyExtractor={item => item.uid}
           renderItem={({ item }) => (
-            <TouchableOpacity onPress={() => handleSelect(item)}>
+            <TouchableOpacity onPress={() => handleSelect(item)} onLongPress={() => handleProfile(item)}>
               <List.Item
-                title={`${item.name} (${item.studentId})`}
-                description={item.class}
-                left={props => <List.Icon {...props} icon="account" />}
+                title={item.name}
+                description={`${item.class} • ${item.studentId}`}
+                left={props => <List.Icon {...props} icon="account-outline" color="#1976d2" />}
               />
             </TouchableOpacity>
           )}
-          ListEmptyComponent={<Text>No students found.</Text>}
+          ListEmptyComponent={<Text style={{ color: '#888', marginTop: 20 }}>No students found.</Text>}
         />
       )}
     </View>

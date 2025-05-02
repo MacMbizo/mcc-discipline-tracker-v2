@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
-import { Text, Button, TextInput, HelperText, Menu, ActivityIndicator, List, Avatar } from 'react-native-paper';
+import { Text, Button, TextInput, HelperText, Menu, ActivityIndicator, List, Avatar, ProgressBar } from 'react-native-paper';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSnackbar } from '../components/GlobalSnackbar';
 import { db } from '../services/firebase';
@@ -24,21 +24,85 @@ interface Misdemeanor {
 type LocationType = 'Hostel' | 'Main School' | 'Both';
 
 export default function IncidentFormScreen() {
+  // --- Collapsible Student Summary State ---
+  const [summaryCollapsed, setSummaryCollapsed] = useState(true);
+  const [incidents, setIncidents] = useState<any[]>([]);
+  const [merits, setMerits] = useState<any[]>([]);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+
+  // Fetch incidents and merits for student summary
+  useEffect(() => {
+    if (!student) return;
+    let didCancel = false;
+    async function fetchSummaryRecords() {
+      setSummaryLoading(true);
+      try {
+        const incSnap = await getDocs(collection(db, 'incidents'));
+        const meritSnap = await getDocs(collection(db, 'merits'));
+        if (!didCancel) {
+          setIncidents(incSnap.docs.filter(doc => doc.data().studentId === student.uid).map(doc => doc.data()));
+          setMerits(meritSnap.docs.filter(doc => doc.data().studentId === student.uid).map(doc => doc.data()));
+        }
+      } catch (e) {
+        if (!didCancel) {
+          setIncidents([]);
+          setMerits([]);
+        }
+      }
+      setSummaryLoading(false);
+    }
+    fetchSummaryRecords();
+    return () => { didCancel = true; };
+  }, [student]);
+
+  // Calculate net heat score: sum of merit points - sum of sanction points
+  const totalMeritPoints = merits.reduce((acc, m) => acc + (typeof m.points === 'number' ? m.points : 0), 0);
+  const totalSanctionPoints = incidents.reduce((acc, inc) => {
+    // Sanction value may be -1, -2, etc. or string; try to parse
+    let points = 0;
+    if (typeof inc.sanctionValue === 'number') {
+      points = inc.sanctionValue;
+    } else if (typeof inc.sanctionValue === 'string') {
+      const parsed = parseInt(inc.sanctionValue, 10);
+      if (!isNaN(parsed)) points = parsed;
+    }
+    return acc + points;
+  }, 0);
+  const netHeat = totalMeritPoints - totalSanctionPoints;
+  const maxHeat = 10;
+  const heatPercent = Math.min(1, Math.abs(netHeat) / maxHeat);
+  const heatBarColor = netHeat >= 0 ? '#1976d2' : '#d32f2f';
+  const heatLabel = `Heat: ${netHeat >= 0 ? '+' : ''}${netHeat} / ${maxHeat}`;
+
+  // Auto-expand summary if user pauses on form for 3 seconds
+  useEffect(() => {
+    if (summaryCollapsed) {
+      const timer = setTimeout(() => setSummaryCollapsed(false), 3000);
+      return () => clearTimeout(timer);
+    }
+    return undefined;
+  }, [summaryCollapsed]);
+
+  console.log('IncidentFormScreen route.params:', route?.params);
+
   const { user } = useAuth();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { showSnackbar } = useSnackbar();
 
-  const [student, setStudent] = useState<Student | null>(route?.params?.student || null);
+  const [student, setStudent] = useState<Student | null>(route?.params?.student || route?.params?.selectedStudent || null);
+  useEffect(() => { console.log('IncidentFormScreen student state:', student); }, [student]);
 
-  // Listen for selectedStudent param from StudentSearchScreen
+  // Listen for student param changes from navigation
   useEffect(() => {
-    if (route.params?.selectedStudent) {
+    if (route.params?.student) {
+      setStudent(route.params.student);
+      navigation.setParams({ student: undefined });
+    } else if (route.params?.selectedStudent) {
       setStudent(route.params.selectedStudent);
-      // Optionally clear the param after use
       navigation.setParams({ selectedStudent: undefined });
     }
-  }, [route.params?.selectedStudent, navigation]);
+  }, [route.params?.student, route.params?.selectedStudent, navigation]);
 
   const [location, setLocation] = useState<LocationType | null>(null);
   const [misdemeanors, setMisdemeanors] = useState<Misdemeanor[]>([]);
@@ -87,8 +151,9 @@ export default function IncidentFormScreen() {
 
   // Handle student selection callback
   const handleSelectStudent = () => {
-    navigation.navigate('StudentSearchScreen');
+    navigation.navigate('StudentSearchScreen', { returnScreen: 'IncidentFormScreen' });
   };
+
 
   const handleSubmit = async () => {
     setSubmitting(true);
@@ -171,8 +236,53 @@ export default function IncidentFormScreen() {
   }, [selectedMisdemeanor]);
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={{ flex: 1 }}
+      keyboardVerticalOffset={80}
+    >
+      <ScrollView contentContainerStyle={styles.container}>
+        {/* Collapsible Student Summary */}
+        {student && (
+          <View style={[styles.card, { marginBottom: 18 }]}> 
+            <Button
+              mode="text"
+              icon={summaryCollapsed ? 'chevron-down' : 'chevron-up'}
+              onPress={() => setSummaryCollapsed(c => !c)}
+              style={{ alignSelf: 'flex-end', marginBottom: summaryCollapsed ? 0 : 8 }}
+              compact
+            >
+              {summaryCollapsed ? 'Show Student Summary' : 'Hide Student Summary'}
+            </Button>
+            {!summaryCollapsed && (
+              <>
+                <Text variant="titleLarge" style={styles.header}>{student?.name ?? ''} ({student?.studentId ?? ''})</Text>
+                <Text style={styles.subheader}>{student?.class ?? ''}</Text>
+                <View style={styles.heatBarContainer}>
+                  <Text style={styles.heatLabel}>Behavior Heat Bar</Text>
+                  <ProgressBar progress={heatPercent} color={heatBarColor} style={styles.heatBar} />
+                  <Text style={[styles.heatScore, { color: heatBarColor, fontWeight: 'bold' }]}>{heatLabel}</Text>
+                </View>
+                {summaryLoading ? <ActivityIndicator style={{ marginTop: 10 }} /> : (
+                  <>
+                    <Text style={styles.sectionHeader}>Recent Incidents</Text>
+                    {incidents.length === 0 ? <Text style={styles.emptyText}>No incidents recorded.</Text> : (
+                      incidents.slice(0, 2).map((inc, idx) => (
+                        <List.Item key={idx} title={inc.misdemeanorName || 'Incident'} description={inc.notes || ''} left={props => <List.Icon {...props} icon="alert-circle-outline" color="#d32f2f" />} right={props => <Text style={styles.time}>{inc.createdAt?.toDate?.().toLocaleDateString?.() || ''}</Text>} style={styles.listItem} />
+                      ))
+                    )}
+                    <Text style={styles.sectionHeader}>Recent Merits</Text>
+                    {merits.length === 0 ? <Text style={styles.emptyText}>No merits awarded.</Text> : (
+                      merits.slice(0, 2).map((mer, idx) => (
+                        <List.Item key={idx} title={mer.meritTypeName || 'Merit'} description={mer.description || ''} left={props => <List.Icon {...props} icon="star-outline" color="#1976d2" />} right={props => <Text style={styles.time}>{mer.createdAt?.toDate?.().toLocaleDateString?.() || ''}</Text>} style={styles.listItem} />
+                      ))
+                    )}
+                  </>
+                )}
+              </>
+            )}
+          </View>
+        )}
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
         <Text variant="titleLarge" style={{ flex: 1 }}>Log Incident</Text>
         <Button
@@ -328,6 +438,65 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     padding: 16,
     backgroundColor: '#fff',
+  },
+  header: {
+    marginBottom: 4,
+    color: '#1976d2',
+    fontWeight: 'bold',
+    fontSize: 22,
+    letterSpacing: 0.2,
+  },
+  subheader: {
+    color: '#888',
+    marginBottom: 16,
+    fontSize: 15,
+  },
+  heatBarContainer: {
+    marginBottom: 18,
+    alignItems: 'center',
+  },
+  heatLabel: {
+    fontWeight: 'bold',
+    color: '#d32f2f',
+    marginBottom: 4,
+  },
+  heatBar: {
+    width: '90%',
+    height: 14,
+    borderRadius: 8,
+    marginBottom: 4,
+  },
+  heatScore: {
+    fontSize: 14,
+    color: '#1976d2',
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  sectionHeader: {
+    color: '#d32f2f',
+    fontWeight: 'bold',
+    fontSize: 16,
+    marginTop: 18,
+    marginBottom: 6,
+  },
+  emptyText: {
+    color: '#888',
+    fontStyle: 'italic',
+    marginBottom: 8,
+  },
+  listItem: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: '#e3e7ef',
+    marginBottom: 6,
+    paddingVertical: 2,
+    paddingHorizontal: 4,
+  },
+  time: {
+    color: '#888',
+    fontSize: 12,
+    marginRight: 8,
   },
   card: {
     backgroundColor: '#fff',

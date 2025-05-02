@@ -67,6 +67,26 @@ export default function AppNavigator() {
             component={DrawerNavigator}
             options={{ headerShown: false }}
           />
+          <Stack.Screen
+            name="StudentProfileScreen"
+            component={require('../screens/StudentProfileScreen').default}
+            options={{ title: 'Student Profile', headerShown: true }}
+          />
+          <Stack.Screen
+            name="IncidentFormScreen"
+            component={require('../screens/IncidentFormScreen').default}
+            options={{ title: 'Log Incident', headerShown: true }}
+          />
+          <Stack.Screen
+            name="MeritFormScreen"
+            component={require('../screens/MeritFormScreen').default}
+            options={{ title: 'Log Merit', headerShown: true }}
+          />
+          <Stack.Screen
+            name="RecentLogsScreen"
+            component={require('../screens/RecentLogsScreen').default}
+            options={{ title: 'Recent Activity', headerShown: true }}
+          />
         </Stack.Navigator>
       ) : (
         <AuthStack />
