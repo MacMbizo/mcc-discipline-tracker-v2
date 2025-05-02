@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
-import { Text, Button, TextInput, HelperText, Menu, ActivityIndicator, List, Avatar, ProgressBar } from 'react-native-paper';
+import { Text, Button, TextInput, HelperText, Menu, ActivityIndicator, List, Avatar } from 'react-native-paper';
+import HeatBar from '../components/HeatBar';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSnackbar } from '../components/GlobalSnackbar';
 import { db } from '../services/firebase';
@@ -259,9 +260,13 @@ export default function IncidentFormScreen() {
                 <Text variant="titleLarge" style={styles.header}>{student?.name ?? ''} ({student?.studentId ?? ''})</Text>
                 <Text style={styles.subheader}>{student?.class ?? ''}</Text>
                 <View style={styles.heatBarContainer}>
-                  <Text style={styles.heatLabel}>Behavior Heat Bar</Text>
-                  <ProgressBar progress={heatPercent} color={heatBarColor} style={styles.heatBar} />
-                  <Text style={[styles.heatScore, { color: heatBarColor, fontWeight: 'bold' }]}>{heatLabel}</Text>
+                  <HeatBar 
+                    value={netHeat} 
+                    maxValue={maxHeat} 
+                    label="Behavior Heat Bar" 
+                    showLabel={true}
+                    height={12}
+                  />
                 </View>
                 {summaryLoading ? <ActivityIndicator style={{ marginTop: 10 }} /> : (
                   <>

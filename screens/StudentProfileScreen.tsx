@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import { Text, ActivityIndicator, List, Button, ProgressBar } from 'react-native-paper';
+import { Text, ActivityIndicator, List, Button } from 'react-native-paper';
+import HeatBar from '../components/HeatBar';
 import { db } from '../services/firebase';
 import { collection, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
 
@@ -101,9 +102,13 @@ export default function StudentProfileScreen({ route, navigation }: any) {
       <Text variant="titleLarge" style={styles.header}>{student?.name ?? ''} ({student?.studentId ?? ''})</Text>
       <Text style={styles.subheader}>{student?.class ?? ''}</Text>
       <View style={styles.heatBarContainer}>
-        <Text style={styles.heatLabel}>Behavior Heat Bar</Text>
-        <ProgressBar progress={heatPercent} color={heatBarColor} style={styles.heatBar} />
-        <Text style={[styles.heatScore, { color: heatBarColor, fontWeight: 'bold' }]}>{heatLabel}</Text>
+        <HeatBar 
+          value={netHeat} 
+          maxValue={maxHeat} 
+          label="Behavior Heat Bar" 
+          showLabel={true}
+          height={12}
+        />
       </View>
       {loading ? <ActivityIndicator style={{ marginTop: 20 }} /> : (
         <>

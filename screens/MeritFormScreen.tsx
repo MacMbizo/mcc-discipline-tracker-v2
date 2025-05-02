@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Animated, Easing } from 'react-native';
-import { Text, Button, TextInput, HelperText, Menu, ActivityIndicator, List, ProgressBar } from 'react-native-paper';
+import { Text, Button, TextInput, HelperText, Menu, ActivityIndicator, List } from 'react-native-paper';
+import HeatBar from '../components/HeatBar';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSnackbar } from '../components/GlobalSnackbar';
 import { db } from '../services/firebase';
@@ -72,27 +73,7 @@ export default function MeritFormScreen() {
   const heatBarColor = netHeat >= 0 ? '#1976d2' : '#d32f2f';
   const heatLabel = `Heat: ${netHeat >= 0 ? '+' : ''}${netHeat} / ${maxHeat}`;
 
-  // --- Animated Heat Bar ---
-  const animatedWidth = useRef(new Animated.Value(heatPercent)).current;
-  const animatedColor = useRef(new Animated.Value(netHeat >= 0 ? 1 : 0)).current;
-  useEffect(() => {
-    Animated.timing(animatedWidth, {
-      toValue: heatPercent,
-      duration: 800,
-      easing: Easing.out(Easing.ease),
-      useNativeDriver: false,
-    }).start();
-    Animated.timing(animatedColor, {
-      toValue: netHeat >= 0 ? 1 : 0,
-      duration: 800,
-      easing: Easing.out(Easing.ease),
-      useNativeDriver: false,
-    }).start();
-  }, [heatPercent, netHeat]);
-  const interpolatedColor = animatedColor.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['#d32f2f', '#1976d2'],
-  });
+  // --- Heat Bar Component will handle animations ---
 
   // --- Highlight recent activity ---
   const [highlightedMeritIdx, setHighlightedMeritIdx] = useState<number | null>(null);
