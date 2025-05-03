@@ -167,484 +167,168 @@ function RecentActivity() {
   );
 }
 
-export default function HomeScreen() {
+
+
+const HomeScreen = ({ navigation }: HomeScreenProps) => {
   const theme = useTheme();
-  const { logout, user } = useAuth();
-  const [dialogVisible, setDialogVisible] = useState(false);
-  const [netHeat, setNetHeat] = useState(0);
+  const [stats, setStats] = useState({ totalIncidents: 0, meritsAwarded: 0, uniqueStudents: 0 });
   const [loading, setLoading] = useState(true);
-  const [counts, setCounts] = useState({ users: 0, teachers: 0, students: 0, incidents: 0, merits: 0 });
-  
-  // Animation values for cascading effect
-  const fadeAnim1 = useRef(new Animated.Value(0)).current;
-  const fadeAnim2 = useRef(new Animated.Value(0)).current;
-  const fadeAnim3 = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(50)).current; // For welcome message slide-in
-  
-  // Calculate heat score from incidents and merits
-  useEffect(() => {
-    async function fetchHeatScore() {
-      try {
-        if (!user) return;
-        
-        const incidentsSnap = await getDocs(query(collection(db, 'incidents'), where('studentId', '==', user.uid)));
-        const meritsSnap = await getDocs(query(collection(db, 'merits'), where('studentId', '==', user.uid)));
-        
-        const totalMeritPoints = meritsSnap.docs.reduce((acc, doc) => {
-          const points = doc.data().points || 0;
-          return acc + points;
-        }, 0);
-        
-        const totalSanctionPoints = incidentsSnap.docs.reduce((acc, doc) => {
-          let points = 0;
-          const sanctionValue = doc.data().sanctionValue;
-          if (typeof sanctionValue === 'number') {
-            points = sanctionValue;
-          } else if (typeof sanctionValue === 'string') {
-            const parsed = parseInt(sanctionValue, 10);
-            if (!isNaN(parsed)) points = parsed;
-          }
-          return acc + points;
-        }, 0);
-        
-        setNetHeat(totalMeritPoints - totalSanctionPoints);
-      } catch (error) {
-        console.error('Error fetching heat score:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    
-    fetchHeatScore();
-  }, [user]);
-
-  // Fetch stats data for counts
-  useEffect(() => {
-    async function fetchStats() {
-      try {
-        const usersSnap = await getDocs(collection(db, 'users'));
-        let teachers = 0, students = 0;
-        usersSnap.forEach(doc => {
-          const role = (doc.data() as any).role;
-          if (role === 'Teacher') teachers++;
-          if (role === 'Student') students++;
-        });
-        const incidentsSnap = await getDocs(collection(db, 'incidents'));
-        const meritsSnap = await getDocs(collection(db, 'merits'));
-        setCounts({
-          users: usersSnap.size,
-          teachers,
-          students,
-          incidents: incidentsSnap.size,
-          merits: meritsSnap.size,
-        });
-      } catch (error) {
-        console.error('Error fetching stats:', error);
-      }
-    }
-    fetchStats();
-  }, []);
-
-  // Start animations
-  useEffect(() => {
-    Animated.sequence([
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 500,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
-      Animated.stagger(150, [
-        Animated.timing(fadeAnim1, {
-          toValue: 1,
-          duration: 500,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-        Animated.timing(fadeAnim2, {
-          toValue: 1,
-          duration: 500,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-        Animated.timing(fadeAnim3, {
-          toValue: 1,
-          duration: 500,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-      ])
-    ]).start();
-  }, []);
-
-  const showDialog = () => setDialogVisible(true);
-  const hideDialog = () => setDialogVisible(false);
-
-  const handleLogout = async () => {
-    hideDialog();
-    await logout();
-  };
-
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good Morning';
-    if (hour < 18) return 'Good Afternoon';
-    return 'Good Evening';
-  };
-
-  const renderAdminContent = () => (
-    <>
-      <Animated.View style={{ opacity: fadeAnim1, transform: [{ translateY: slideAnim }] }}>
-        <Text style={styles.sectionTitle}>Stats</Text>
-        <View style={{ marginBottom: 16 }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
-            <StatCard 
-              label="Users" 
-              value={counts.users} 
-              color="#1976d2" 
-              icon="account-group" 
-              gradientFrom="#1976d2" 
-              gradientTo="#64b5f6" 
-            />
-            <StatCard 
-              label="Teachers" 
-              value={counts.teachers} 
-              color="#d32f2f" 
-              icon="school" 
-              gradientFrom="#d32f2f" 
-              gradientTo="#ef5350" 
-            />
-            <StatCard 
-              label="Students" 
-              value={counts.students} 
-              color="#1976d2" 
-              icon="account" 
-              gradientFrom="#1976d2" 
-              gradientTo="#64b5f6" 
-            />
-          </View>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <StatCard 
-              label="Incidents" 
-              value={counts.incidents} 
-              color="#d32f2f" 
-              icon="alert" 
-              gradientFrom="#d32f2f" 
-              gradientTo="#ef5350" 
-            />
-            <StatCard 
-              label="Merits" 
-              value={counts.merits} 
-              color="#388e3c" 
-              icon="star" 
-              gradientFrom="#388e3c" 
-              gradientTo="#66bb6a" 
-            />
-          </View>
-        </View>
-      </Animated.View>
-      <Animated.View style={{ opacity: fadeAnim2 }}>
-        <Text style={styles.sectionTitle}>Quick Actions</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.shortcutsContainer}>
-          <ShortcutButton label="Add User" icon="account-plus" color="#1976d2" onPress={() => { /* Navigate to Add User */ }} />
-          <ShortcutButton label="Log Incident" icon="alert-circle" color="#d32f2f" onPress={() => { /* Navigate to Incident Form */ }} />
-          <ShortcutButton label="Award Merit" icon="star" color="#388e3c" onPress={() => { /* Navigate to Merit Form */ }} />
-          <ShortcutButton label="Reports" icon="chart-bar" color="#ffa000" onPress={() => { /* Navigate to Reports */ }} />
-        </ScrollView>
-      </Animated.View>
-      <Animated.View style={{ opacity: fadeAnim3, marginTop: 24 }}>
-        <Text style={styles.sectionTitle}>Recent Activity</Text>
-        <RecentActivity />
-      </Animated.View>
-    </>
-  );
-
-  const renderTeacherContent = () => (
-    <>
-      <Animated.View style={{ opacity: fadeAnim1, transform: [{ translateY: slideAnim }] }}>
-        <Text style={styles.sectionTitle}>Stats</Text>
-        <View style={{ marginBottom: 16 }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
-            <StatCard 
-              label="Students" 
-              value={counts.students} 
-              color="#1976d2" 
-              icon="account" 
-              gradientFrom="#1976d2" 
-              gradientTo="#64b5f6" 
-            />
-            <StatCard 
-              label="Incidents" 
-              value={counts.incidents} 
-              color="#d32f2f" 
-              icon="alert" 
-              gradientFrom="#d32f2f" 
-              gradientTo="#ef5350" 
-            />
-            <StatCard 
-              label="Merits" 
-              value={counts.merits} 
-              color="#388e3c" 
-              icon="star" 
-              gradientFrom="#388e3c" 
-              gradientTo="#66bb6a" 
-            />
-          </View>
-        </View>
-      </Animated.View>
-      <Animated.View style={{ opacity: fadeAnim2 }}>
-        <Text style={styles.sectionTitle}>Quick Actions</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.shortcutsContainer}>
-          <ShortcutButton label="Log Incident" icon="alert-circle" color="#d32f2f" onPress={() => { /* Navigate to Incident Form */ }} />
-          <ShortcutButton label="Award Merit" icon="star" color="#388e3c" onPress={() => { /* Navigate to Merit Form */ }} />
-          <ShortcutButton label="Search Student" icon="account-search" color="#1976d2" onPress={() => { /* Navigate to Student Search */ }} />
-          <ShortcutButton label="View Logs" icon="clipboard-list" color="#757575" onPress={() => { /* Navigate to Logs */ }} />
-        </ScrollView>
-      </Animated.View>
-      <Animated.View style={{ opacity: fadeAnim3, marginTop: 24 }}>
-        <Text style={styles.sectionTitle}>Recent Activity</Text>
-        <RecentActivity />
-      </Animated.View>
-    </>
-  );
-
-  const renderStudentContent = () => (
-    <>
-      <Animated.View style={{ opacity: fadeAnim1, transform: [{ translateY: slideAnim }] }}>
-        <Card style={styles.heatCard}>
-          <Card.Title title="Discipline Score" titleStyle={styles.heatTitle} />
-          <Card.Content>
-            <HeatBar score={netHeat} />
-            <Text style={styles.heatScoreText}>Net Score: {netHeat}</Text>
-          </Card.Content>
-        </Card>
-      </Animated.View>
-      <Animated.View style={{ opacity: fadeAnim2 }}>
-        <Text style={styles.sectionTitle}>Quick Links</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.shortcutsContainer}>
-          <ShortcutButton label="My Profile" icon="account-circle" color="#1976d2" onPress={() => { /* Navigate to Profile */ }} />
-          <ShortcutButton label="View Logs" icon="clipboard-list" color="#388e3c" onPress={() => { /* Navigate to Logs */ }} />
-          {/* Add more student-specific links if needed */}
-        </ScrollView>
-      </Animated.View>
-      {/* Add Recent Activity or other relevant sections for students */}
-    </>
-  );
+  const [refreshing, setRefreshing] = useState(false);
+  const currentUser = auth.currentUser;
 
   return (
-    <Surface style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContentContainer}>
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <MaterialCommunityIcons name="menu" size={24} color="#1976d2" />
+    <ScrollView
+      style={styles.container}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+    >
+      {loading ? (
+        <ActivityIndicator animating={true} size="large" style={styles.loader} />
+      ) : (
+        <>
+          <View style={styles.statsContainer}>
+            <LinearGradient
+              colors={['#FFA726', '#FB8C00']} // Example gradient colors
+              style={styles.cardGradient}
+            >
+              <Card style={styles.card}>
+                <Card.Content style={styles.cardContent}>
+                  <Avatar.Icon size={40} icon="alert-circle-outline" style={styles.cardIcon} />
+                  <View>
+                    <Title style={styles.cardTitle}>Total Incidents</Title>
+                    <Paragraph style={styles.cardValue}>{stats.totalIncidents}</Paragraph>
+                  </View>
+                </Card.Content>
+              </Card>
+            </LinearGradient>
+
+            <LinearGradient
+              colors={['#66BB6A', '#4CAF50']} // Example gradient colors
+              style={styles.cardGradient}
+            >
+              <Card style={styles.card}>
+                <Card.Content style={styles.cardContent}>
+                  <Avatar.Icon size={40} icon="star-circle-outline" style={styles.cardIcon} />
+                  <View>
+                    <Title style={styles.cardTitle}>Merits Awarded</Title>
+                    <Paragraph style={styles.cardValue}>{stats.meritsAwarded}</Paragraph>
+                  </View>
+                </Card.Content>
+              </Card>
+            </LinearGradient>
+
+            <LinearGradient
+              colors={['#42A5F5', '#2196F3']} // Example gradient colors
+              style={styles.cardGradient}
+            >
+              <Card style={styles.card}>
+                <Card.Content style={styles.cardContent}>
+                  <Avatar.Icon size={40} icon="account-group-outline" style={styles.cardIcon} />
+                  <View>
+                    <Title style={styles.cardTitle}>Students Involved</Title>
+                    <Paragraph style={styles.cardValue}>{stats.uniqueStudents}</Paragraph>
+                  </View>
+                </Card.Content>
+              </Card>
+            </LinearGradient>
           </View>
-          <View style={styles.headerCenter}>
-            <Text style={styles.headerTitle}>Home</Text>
+
+          <View style={styles.actionsContainer}>
+            <Button
+              icon="plus-circle-outline"
+              mode="contained"
+              onPress={() => navigation.navigate('CreateRecord')}
+              style={[styles.actionButton, { backgroundColor: theme.colors.primary }]} // Use theme color
+              labelStyle={styles.buttonLabel}
+            >
+              New Incident
+            </Button>
+            <Button
+              icon="star-plus-outline"
+              mode="contained"
+              onPress={() => navigation.navigate('CreateMerit')}
+              style={[styles.actionButton, { backgroundColor: theme.colors.accent }]} // Use theme color
+              labelStyle={styles.buttonLabel}
+            >
+              Award Merit
+            </Button>
           </View>
-          <TouchableOpacity onPress={showDialog} style={styles.headerRight}>
-            <MaterialCommunityIcons name="cog" size={24} color="#1976d2" />
-          </TouchableOpacity>
-        </View>
-        
-        <View style={styles.greetingContainer}>
-          <Animated.Text style={[styles.greeting, { transform: [{ translateY: slideAnim }] }]}>
-            {getGreeting()},
-          </Animated.Text>
-          <Animated.Text style={[styles.userName, { transform: [{ translateY: slideAnim }] }]}>
-            {user?.displayName || user?.email || 'User'}!
-          </Animated.Text>
-        </View>
 
-        {loading ? (
-          <Text>Loading dashboard...</Text>
-        ) : (
-          <>
-            {user?.role === 'Admin' && renderAdminContent()}
-            {user?.role === 'Teacher' && renderTeacherContent()}
-            {user?.role === 'Student' && renderStudentContent()}
-            {/* Fallback or default view if role is not defined or recognized */}
-            {!user?.role && <Text>Loading user role...</Text>}
-          </>
-        )}
-      </ScrollView>
-
-      {/* Bottom Navigation */}
-      <View style={styles.bottomNavigation}>
-        <TouchableOpacity style={styles.navItem}>
-          <MaterialCommunityIcons name="home" size={24} color="#0D47A1" />
-          <Text style={styles.navText}>Home</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <MaterialCommunityIcons name="account" size={24} color="#90CAF9" />
-          <Text style={[styles.navText, { color: '#90CAF9' }]}>Profile</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <MaterialCommunityIcons name="theme-light-dark" size={24} color="#90CAF9" />
-          <Text style={[styles.navText, { color: '#90CAF9' }]}>Theme</Text>
-        </TouchableOpacity>
-      </View>
-
-      <Portal>
-        <Dialog visible={dialogVisible} onDismiss={hideDialog}>
-          <Dialog.Title>Confirm Logout</Dialog.Title>
-          <Dialog.Content>
-            <Text>Are you sure you want to log out?</Text>
-          </Dialog.Content>
-          <Dialog.Actions>
-            <PaperButton onPress={hideDialog}>Cancel</PaperButton>
-            <PaperButton onPress={handleLogout}>Logout</PaperButton>
-          </Dialog.Actions>
-        </Dialog>
-      </Portal>
-    </Surface>
+          {/* Add other sections like Recent Activity if needed */}
+        </>
+      )}
+    </ScrollView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff', // White background for modern look
+    // backgroundColor: '#f5f5f5', // Lighter background
   },
-  scrollContentContainer: {
-    padding: 16,
-    paddingBottom: 80, // Ensure space at the bottom for navigation
+  loader: {
+    marginTop: 50,
   },
-  header: {
+  statsContainer: {
+    paddingHorizontal: 10,
+    paddingTop: 20,
+    paddingBottom: 10,
+  },
+  cardGradient: {
+    borderRadius: 12, // Match card's border radius
+    marginBottom: 15,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  card: {
+    backgroundColor: 'transparent', // Make card background transparent to show gradient
+    // borderRadius: 12, // Removed as it's handled by LinearGradient
+    // marginBottom: 15,
+    // elevation: 4,
+  },
+  cardContent: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
-    paddingVertical: 10,
+    paddingVertical: 20, // Increased padding
+    paddingHorizontal: 15,
   },
-  headerLeft: {
-    width: 40,
-    alignItems: 'flex-start',
+  cardIcon: {
+    marginRight: 15,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)', // Slightly transparent white background for icon
   },
-  headerCenter: {
-    flex: 1,
-    alignItems: 'center',
+  cardTitle: {
+    fontSize: 16, // Slightly smaller title
+    // fontWeight: 'bold',
+    color: '#fff', // White text for contrast on gradient
+    marginBottom: 2,
   },
-  headerRight: {
-    width: 40,
-    alignItems: 'flex-end',
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#0D47A1',
-  },
-  greetingContainer: {
-    marginBottom: 32,
-  },
-  greeting: {
-    fontSize: 32,
-    fontWeight: '400',
-    color: '#0D47A1',
-  },
-  userName: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#0D47A1',
-    marginTop: 4,
-  },
-  sectionTitle: {
+  cardValue: {
     fontSize: 24,
-    fontWeight: '600',
-    marginBottom: 16,
-    color: '#0D47A1',
-  },
-  shortcutsContainer: {
-    flexDirection: 'row',
-    marginBottom: 32,
-    paddingLeft: 4,
-    paddingRight: 16,
-  },
-  activityCard: {
-    marginBottom: 12,
-    borderRadius: 16,
-    overflow: 'hidden',
-    borderColor: '#f0f0f0',
-    borderWidth: 1,
-  },
-  activityItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    padding: 16,
-  },
-  activityIconContainer: {
-    padding: 8,
-    borderRadius: 20,
-    marginRight: 16,
-  },
-  activityContent: {
-    flex: 1,
-  },
-  activityText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#0D47A1',
-  },
-  activityTime: {
-    fontSize: 14,
-    color: '#1976d2',
-    marginTop: 4,
-  },
-  emptyActivity: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 40,
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#f0f0f0',
-  },
-  heatCard: {
-    marginBottom: 32,
-    elevation: 2,
-    borderRadius: 16,
-    backgroundColor: '#ffffff',
-    padding: 16,
-  },
-  heatTitle: {
-    fontSize: 18,
     fontWeight: 'bold',
-    color: '#0D47A1',
+    color: '#fff', // White text
   },
-  heatScoreText: {
-    marginTop: 12,
-    textAlign: 'center',
-    fontSize: 16,
-    color: '#1976d2',
-    fontWeight: '500',
-  },
-  placeholderText: {
-    textAlign: 'center',
-    color: '#1976d2',
-    marginTop: 24,
-    fontSize: 18,
-  },
-  bottomNavigation: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#ffffff',
+  actionsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingHorizontal: 15,
+    paddingVertical: 20,
     borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
+    borderTopColor: '#eee',
+    backgroundColor: '#fff', // White background for action area
   },
-  navItem: {
-    alignItems: 'center',
-    justifyContent: 'center',
+  actionButton: {
+    flex: 1,
+    marginHorizontal: 8,
+    borderRadius: 20, // More rounded buttons
+    paddingVertical: 8,
+    elevation: 2,
   },
-  navText: {
-    fontSize: 12,
-    marginTop: 4,
-    color: '#0D47A1',
-    fontWeight: '500',
+  buttonLabel: {
+    fontSize: 14,
+    fontWeight: 'bold',
   },
 });
+
+export default HomeScreen;
