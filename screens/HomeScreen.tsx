@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Surface, Text, useTheme, Dialog, Portal, Button as PaperButton, IconButton, Card } from 'react-native-paper';
+import { Surface, Text, useTheme, Dialog, Portal, Button as PaperButton, IconButton, Card, Avatar } from 'react-native-paper';
 import { Image, Animated, Easing } from 'react-native';
 import { StyleSheet, View, TouchableOpacity, ScrollView } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -9,27 +9,41 @@ import HeatBar from '../components/HeatBar';
 import { db } from '../services/firebase';
 import { collection, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
 
-function StatCard({ label, value, color, icon, borderColor = '#1976d2', iconColor = '#1976d2' }: { label: string; value: number; color: string; icon: string; borderColor?: string; iconColor?: string }) {
+// Import icons from Expo vector icons that match the design
+import { Feather } from '@expo/vector-icons';
+import { MaterialIcons } from '@expo/vector-icons';
+import { FontAwesome5 } from '@expo/vector-icons';
+
+function StatCard({ label, value, color, icon, gradientFrom, gradientTo }: { label: string; value: number; color: string; icon: string; gradientFrom?: string; gradientTo?: string }) {
+  // Use gradient colors if provided, otherwise use the color prop
+  const from = gradientFrom || (color === '#1976d2' ? '#1976d2' : color);
+  const to = gradientTo || (color === '#1976d2' ? '#64b5f6' : color);
+  
   return (
     <View style={{
-      backgroundColor: color,
-      borderRadius: 14,
-      paddingVertical: 14,
-      paddingHorizontal: 8,
-      minWidth: 78,
+      backgroundColor: from, // Fallback for when linear gradient isn't available
+      borderRadius: 24, // More rounded corners like in the design
+      paddingVertical: 16,
+      paddingHorizontal: 10,
+      minWidth: 90,
       alignItems: 'center',
-      marginHorizontal: 3,
+      justifyContent: 'center',
+      marginHorizontal: 4,
       flex: 1,
-      borderWidth: 2,
-      borderColor,
-      shadowColor: borderColor,
-      shadowOpacity: 0.08,
-      shadowRadius: 2,
-      elevation: 1,
+      position: 'relative',
+      shadowColor: '#000',
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
     }}>
-      <MaterialCommunityIcons name={icon} size={28} color={iconColor} />
-      <Text style={{ color: iconColor, fontWeight: 'bold', fontSize: 20, marginTop: 3 }}>{value}</Text>
-      <Text style={{ color: '#0D1B2A', fontSize: 13, marginTop: 2, fontWeight: '600' }}>{label}</Text>
+      <MaterialCommunityIcons 
+        name={icon} 
+        size={24} 
+        color="#fff" 
+        style={{ position: 'absolute', top: 8, right: 8 }}
+      />
+      <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 24, marginTop: 3 }}>{value}</Text>
+      <Text style={{ color: '#fff', fontSize: 14, marginTop: 2, fontWeight: '500' }}>{label}</Text>
     </View>
   );
 }
@@ -37,26 +51,22 @@ function StatCard({ label, value, color, icon, borderColor = '#1976d2', iconColo
 function ShortcutButton({ label, icon, color, onPress, outline = false }: { label: string; icon: string; color: string; onPress: () => void; outline?: boolean }) {
   return (
     <TouchableOpacity onPress={onPress} style={{ alignItems: 'center', marginHorizontal: 8 }}>
-      <View style={outline ? {
-        backgroundColor: '#fff',
-        borderRadius: 32,
-        padding: 12,
-        marginBottom: 6,
-        borderWidth: 2,
-        borderColor: color,
-        shadowColor: color,
-        shadowOpacity: 0.08,
-        shadowRadius: 2,
-        elevation: 1,
-      } : {
+      <View style={{
         backgroundColor: color,
-        borderRadius: 32,
-        padding: 12,
-        marginBottom: 6,
+        borderRadius: 28, // More rounded for the modern look
+        width: 56,
+        height: 56,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 8,
+        shadowColor: color,
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 3,
       }}>
-        <MaterialCommunityIcons name={icon} size={28} color={outline ? color : '#fff'} />
+        <MaterialCommunityIcons name={icon} size={24} color="#fff" />
       </View>
-      <Text style={{ color: outline ? color : '#fff', fontWeight: 'bold', fontSize: 14 }}>{label}</Text>
+      <Text style={{ color: '#0D47A1', fontWeight: '600', fontSize: 12 }}>{label}</Text>
     </TouchableOpacity>
   );
 }
@@ -133,19 +143,25 @@ function RecentActivity() {
           <Text style={{ color: '#888', marginTop: 8 }}>No recent activity</Text>
         </View>
       ) : activities.map(act => (
-        <View key={act.id + act.type} style={styles.activityItem}>
-          <View style={[styles.activityIconContainer, { backgroundColor: act.type === 'incident' ? '#ffebee' : '#e8f5e9' }]}>
-            <MaterialCommunityIcons 
-              name={act.type === 'incident' ? 'alert-circle' : 'star'} 
-              size={18} 
-              color={act.type === 'incident' ? '#d32f2f' : '#388e3c'} 
-            />
+        <Card
+          key={act.id + act.type}
+          style={styles.activityCard}
+        >
+          <View style={styles.activityItem}>
+            <View style={[styles.activityIconContainer, { backgroundColor: act.type === 'incident' ? '#ffebee' : '#e8f5e9' }]}>
+              <MaterialCommunityIcons 
+                name={act.type === 'incident' ? 'alert-circle' : 'star'} 
+                size={18} 
+                color={act.type === 'incident' ? '#d32f2f' : '#388e3c'} 
+              />
+            </View>
+            <View style={styles.activityContent}>
+              <Text style={styles.activityText}>{act.text}</Text>
+              <Text style={styles.activityTime}>{act.time}</Text>
+            </View>
+            <MaterialCommunityIcons name="chevron-right" size={20} color="#bbb" />
           </View>
-          <View style={styles.activityContent}>
-            <Text style={styles.activityText}>{act.text}</Text>
-            <Text style={styles.activityTime}>{act.time}</Text>
-          </View>
-        </View>
+        </Card>
       ))}
     </View>
   );
@@ -157,11 +173,13 @@ export default function HomeScreen() {
   const [dialogVisible, setDialogVisible] = useState(false);
   const [netHeat, setNetHeat] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [counts, setCounts] = useState({ users: 0, teachers: 0, students: 0, incidents: 0, merits: 0 });
   
   // Animation values for cascading effect
   const fadeAnim1 = useRef(new Animated.Value(0)).current;
   const fadeAnim2 = useRef(new Animated.Value(0)).current;
   const fadeAnim3 = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current; // For welcome message slide-in
   
   // Calculate heat score from incidents and merits
   useEffect(() => {
@@ -199,302 +217,434 @@ export default function HomeScreen() {
     
     fetchHeatScore();
   }, [user]);
-  
-  // Start cascading animations when component mounts
+
+  // Fetch stats data for counts
   useEffect(() => {
-    const startAnimations = () => {
-      Animated.sequence([
+    async function fetchStats() {
+      try {
+        const usersSnap = await getDocs(collection(db, 'users'));
+        let teachers = 0, students = 0;
+        usersSnap.forEach(doc => {
+          const role = (doc.data() as any).role;
+          if (role === 'Teacher') teachers++;
+          if (role === 'Student') students++;
+        });
+        const incidentsSnap = await getDocs(collection(db, 'incidents'));
+        const meritsSnap = await getDocs(collection(db, 'merits'));
+        setCounts({
+          users: usersSnap.size,
+          teachers,
+          students,
+          incidents: incidentsSnap.size,
+          merits: meritsSnap.size,
+        });
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+      }
+    }
+    fetchStats();
+  }, []);
+
+  // Start animations
+  useEffect(() => {
+    Animated.sequence([
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 500,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.stagger(150, [
         Animated.timing(fadeAnim1, {
           toValue: 1,
-          duration: 400,
-          easing: Easing.out(Easing.quad),
-          useNativeDriver: true
+          duration: 500,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
         }),
         Animated.timing(fadeAnim2, {
           toValue: 1,
-          duration: 400,
-          easing: Easing.out(Easing.quad),
-          useNativeDriver: true
+          duration: 500,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
         }),
         Animated.timing(fadeAnim3, {
           toValue: 1,
-          duration: 400,
-          easing: Easing.out(Easing.quad),
-          useNativeDriver: true
-        })
-      ]).start();
-    };
-    
-    startAnimations();
-  }, [fadeAnim1, fadeAnim2, fadeAnim3]);
+          duration: 500,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ])
+    ]).start();
+  }, []);
 
-  const handleDismiss = () => setDialogVisible(false);
-  const handleLogout = () => {
-    setDialogVisible(false);
-    logout();
+  const showDialog = () => setDialogVisible(true);
+  const hideDialog = () => setDialogVisible(false);
+
+  const handleLogout = async () => {
+    hideDialog();
+    await logout();
   };
 
-  return (
-    <Surface style={[styles.surface, { backgroundColor: theme.colors.background, padding: 0 }]}> 
-      <View style={{ flex: 1 }}>
-        {/* Slim Red Accent Header */}
-        <View style={{ backgroundColor: '#d32f2f', height: 6, width: '100%' }} />
-        {/* Header with Logo, Greeting and Logout */}
-        <View style={styles.headerContainer}>
-          <View style={styles.headerContent}>
-            <View style={styles.logoContainer}>
-              <Image source={require('../assets/mcc.ac.png')} style={styles.logoImage} resizeMode="contain" />
-            </View>
-            <View style={styles.greetingContainer}>
-              <Text style={styles.greetingText}>Hello, {user?.displayName?.split(' ')[0] || 'User'}</Text>
-            </View>
-            <TouchableOpacity
-              style={styles.logoutButton}
-              onPress={() => setDialogVisible(true)}
-              activeOpacity={0.7}
-              accessibilityLabel="Logout"
-            >
-              <MaterialCommunityIcons name="logout" size={20} color="#d32f2f" style={{ marginRight: 6 }} />
-              <Text style={styles.logoutText}>Logout</Text>
-            </TouchableOpacity>
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good Morning';
+    if (hour < 18) return 'Good Afternoon';
+    return 'Good Evening';
+  };
+
+  const renderAdminContent = () => (
+    <>
+      <Animated.View style={{ opacity: fadeAnim1, transform: [{ translateY: slideAnim }] }}>
+        <Text style={styles.sectionTitle}>Stats</Text>
+        <View style={{ marginBottom: 16 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
+            <StatCard 
+              label="Users" 
+              value={counts.users} 
+              color="#1976d2" 
+              icon="account-group" 
+              gradientFrom="#1976d2" 
+              gradientTo="#64b5f6" 
+            />
+            <StatCard 
+              label="Teachers" 
+              value={counts.teachers} 
+              color="#d32f2f" 
+              icon="school" 
+              gradientFrom="#d32f2f" 
+              gradientTo="#ef5350" 
+            />
+            <StatCard 
+              label="Students" 
+              value={counts.students} 
+              color="#1976d2" 
+              icon="account" 
+              gradientFrom="#1976d2" 
+              gradientTo="#64b5f6" 
+            />
+          </View>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+            <StatCard 
+              label="Incidents" 
+              value={counts.incidents} 
+              color="#d32f2f" 
+              icon="alert" 
+              gradientFrom="#d32f2f" 
+              gradientTo="#ef5350" 
+            />
+            <StatCard 
+              label="Merits" 
+              value={counts.merits} 
+              color="#388e3c" 
+              icon="star" 
+              gradientFrom="#388e3c" 
+              gradientTo="#66bb6a" 
+            />
           </View>
         </View>
-        
-        {/* Main Content - Scrollable */}
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }}>
-          
-          {/* Stats Widgets - First Animated Card */}
-          <Animated.View style={{
-            opacity: fadeAnim1,
-            transform: [{ translateY: fadeAnim1.interpolate({
-              inputRange: [0, 1],
-              outputRange: [50, 0]
-            })}],
-            marginTop: 16
-          }}>
-            <Card style={styles.card}>
-              <Card.Content>
-                <Text style={styles.cardTitle}>School Statistics</Text>
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginTop: 8 }}>
-                  <View style={{ width: '48%', marginBottom: 8, flexDirection: 'row' }}>
-                    <StatCard label="Users" value={0} color="#fff" icon="account-group-outline" borderColor="#1976d2" iconColor="#1976d2" />
-                    <StatCard label="Teachers" value={0} color="#fff" icon="school-outline" borderColor="#d32f2f" iconColor="#d32f2f" />
-                  </View>
-                  <View style={{ width: '48%', marginBottom: 8, flexDirection: 'row' }}>
-                    <StatCard label="Students" value={0} color="#fff" icon="account-outline" borderColor="#1976d2" iconColor="#1976d2" />
-                    <StatCard label="Incidents" value={0} color="#fff" icon="alert-circle-outline" borderColor="#d32f2f" iconColor="#d32f2f" />
-                  </View>
-                </View>
-              </Card.Content>
-            </Card>
-          </Animated.View>
-
-          {/* Quick Actions - Second Animated Card */}
-          <Animated.View style={{
-            opacity: fadeAnim2,
-            transform: [{ translateY: fadeAnim2.interpolate({
-              inputRange: [0, 1],
-              outputRange: [50, 0]
-            })}],
-            marginTop: 16
-          }}>
-            <Card style={[styles.card, { borderLeftWidth: 4, borderLeftColor: '#1976d2' }]}>
-              <Card.Content>
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
-                  <MaterialCommunityIcons name="lightning-bolt" size={22} color="#1976d2" />
-                  <Text style={[styles.cardTitle, { marginBottom: 0, marginLeft: 8 }]}>Quick Actions</Text>
-                </View>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginTop: 12, paddingVertical: 8 }}>
-                  <ShortcutButton 
-                    label="Log Incident" 
-                    icon="clipboard-plus-outline" 
-                    color="#d32f2f" 
-                    outline 
-                    onPress={() => {}} 
-                  />
-                  <ShortcutButton 
-                    label="Award Merit" 
-                    icon="medal-outline" 
-                    color="#1976d2" 
-                    outline 
-                    onPress={() => {}} 
-                  />
-                  <ShortcutButton 
-                    label="View Students" 
-                    icon="account-search-outline" 
-                    color="#388e3c" 
-                    outline 
-                    onPress={() => {}} 
-                  />
-                  <ShortcutButton 
-                    label="Reports" 
-                    icon="chart-bar" 
-                    color="#f57c00" 
-                    outline 
-                    onPress={() => {}} 
-                  />
-                </View>
-              </Card.Content>
-            </Card>
-          </Animated.View>
-
-          {/* Recent Activity Section - Third Animated Card */}
-          <Animated.View style={{
-            opacity: fadeAnim3,
-            transform: [{ translateY: fadeAnim3.interpolate({
-              inputRange: [0, 1],
-              outputRange: [50, 0]
-            })}],
-            marginTop: 16,
-            marginBottom: 16
-          }}>
-            <Card style={[styles.card, { borderLeftWidth: 4, borderLeftColor: '#d32f2f' }]}>
-              <Card.Content>
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-                  <MaterialCommunityIcons name="clock-outline" size={22} color="#d32f2f" />
-                  <Text style={[styles.cardTitle, { marginBottom: 0, marginLeft: 8 }]}>Recent Activity</Text>
-                </View>
-                <View style={{ backgroundColor: '#f5f5f5', borderRadius: 8, padding: 12 }}>
-                  <RecentActivity />
-                </View>
-              </Card.Content>
-            </Card>
-          </Animated.View>
+      </Animated.View>
+      <Animated.View style={{ opacity: fadeAnim2 }}>
+        <Text style={styles.sectionTitle}>Quick Actions</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.shortcutsContainer}>
+          <ShortcutButton label="Add User" icon="account-plus" color="#1976d2" onPress={() => { /* Navigate to Add User */ }} />
+          <ShortcutButton label="Log Incident" icon="alert-circle" color="#d32f2f" onPress={() => { /* Navigate to Incident Form */ }} />
+          <ShortcutButton label="Award Merit" icon="star" color="#388e3c" onPress={() => { /* Navigate to Merit Form */ }} />
+          <ShortcutButton label="Reports" icon="chart-bar" color="#ffa000" onPress={() => { /* Navigate to Reports */ }} />
         </ScrollView>
-        <Portal>
-          <Dialog visible={dialogVisible} onDismiss={handleDismiss}>
-            <Dialog.Title>Logout</Dialog.Title>
-            <Dialog.Content>
-              <Text>Are you sure you want to log out?</Text>
-            </Dialog.Content>
-            <Dialog.Actions>
-              <PaperButton onPress={handleDismiss}>Cancel</PaperButton>
-              <PaperButton onPress={handleLogout}>Logout</PaperButton>
-            </Dialog.Actions>
-          </Dialog>
-        </Portal>
+      </Animated.View>
+      <Animated.View style={{ opacity: fadeAnim3, marginTop: 24 }}>
+        <Text style={styles.sectionTitle}>Recent Activity</Text>
+        <RecentActivity />
+      </Animated.View>
+    </>
+  );
+
+  const renderTeacherContent = () => (
+    <>
+      <Animated.View style={{ opacity: fadeAnim1, transform: [{ translateY: slideAnim }] }}>
+        <Text style={styles.sectionTitle}>Stats</Text>
+        <View style={{ marginBottom: 16 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
+            <StatCard 
+              label="Students" 
+              value={counts.students} 
+              color="#1976d2" 
+              icon="account" 
+              gradientFrom="#1976d2" 
+              gradientTo="#64b5f6" 
+            />
+            <StatCard 
+              label="Incidents" 
+              value={counts.incidents} 
+              color="#d32f2f" 
+              icon="alert" 
+              gradientFrom="#d32f2f" 
+              gradientTo="#ef5350" 
+            />
+            <StatCard 
+              label="Merits" 
+              value={counts.merits} 
+              color="#388e3c" 
+              icon="star" 
+              gradientFrom="#388e3c" 
+              gradientTo="#66bb6a" 
+            />
+          </View>
+        </View>
+      </Animated.View>
+      <Animated.View style={{ opacity: fadeAnim2 }}>
+        <Text style={styles.sectionTitle}>Quick Actions</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.shortcutsContainer}>
+          <ShortcutButton label="Log Incident" icon="alert-circle" color="#d32f2f" onPress={() => { /* Navigate to Incident Form */ }} />
+          <ShortcutButton label="Award Merit" icon="star" color="#388e3c" onPress={() => { /* Navigate to Merit Form */ }} />
+          <ShortcutButton label="Search Student" icon="account-search" color="#1976d2" onPress={() => { /* Navigate to Student Search */ }} />
+          <ShortcutButton label="View Logs" icon="clipboard-list" color="#757575" onPress={() => { /* Navigate to Logs */ }} />
+        </ScrollView>
+      </Animated.View>
+      <Animated.View style={{ opacity: fadeAnim3, marginTop: 24 }}>
+        <Text style={styles.sectionTitle}>Recent Activity</Text>
+        <RecentActivity />
+      </Animated.View>
+    </>
+  );
+
+  const renderStudentContent = () => (
+    <>
+      <Animated.View style={{ opacity: fadeAnim1, transform: [{ translateY: slideAnim }] }}>
+        <Card style={styles.heatCard}>
+          <Card.Title title="Discipline Score" titleStyle={styles.heatTitle} />
+          <Card.Content>
+            <HeatBar score={netHeat} />
+            <Text style={styles.heatScoreText}>Net Score: {netHeat}</Text>
+          </Card.Content>
+        </Card>
+      </Animated.View>
+      <Animated.View style={{ opacity: fadeAnim2 }}>
+        <Text style={styles.sectionTitle}>Quick Links</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.shortcutsContainer}>
+          <ShortcutButton label="My Profile" icon="account-circle" color="#1976d2" onPress={() => { /* Navigate to Profile */ }} />
+          <ShortcutButton label="View Logs" icon="clipboard-list" color="#388e3c" onPress={() => { /* Navigate to Logs */ }} />
+          {/* Add more student-specific links if needed */}
+        </ScrollView>
+      </Animated.View>
+      {/* Add Recent Activity or other relevant sections for students */}
+    </>
+  );
+
+  return (
+    <Surface style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollContentContainer}>
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <MaterialCommunityIcons name="menu" size={24} color="#1976d2" />
+          </View>
+          <View style={styles.headerCenter}>
+            <Text style={styles.headerTitle}>Home</Text>
+          </View>
+          <TouchableOpacity onPress={showDialog} style={styles.headerRight}>
+            <MaterialCommunityIcons name="cog" size={24} color="#1976d2" />
+          </TouchableOpacity>
+        </View>
+        
+        <View style={styles.greetingContainer}>
+          <Animated.Text style={[styles.greeting, { transform: [{ translateY: slideAnim }] }]}>
+            {getGreeting()},
+          </Animated.Text>
+          <Animated.Text style={[styles.userName, { transform: [{ translateY: slideAnim }] }]}>
+            {user?.displayName || user?.email || 'User'}!
+          </Animated.Text>
+        </View>
+
+        {loading ? (
+          <Text>Loading dashboard...</Text>
+        ) : (
+          <>
+            {user?.role === 'Admin' && renderAdminContent()}
+            {user?.role === 'Teacher' && renderTeacherContent()}
+            {user?.role === 'Student' && renderStudentContent()}
+            {/* Fallback or default view if role is not defined or recognized */}
+            {!user?.role && <Text>Loading user role...</Text>}
+          </>
+        )}
+      </ScrollView>
+
+      {/* Bottom Navigation */}
+      <View style={styles.bottomNavigation}>
+        <TouchableOpacity style={styles.navItem}>
+          <MaterialCommunityIcons name="home" size={24} color="#0D47A1" />
+          <Text style={styles.navText}>Home</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.navItem}>
+          <MaterialCommunityIcons name="account" size={24} color="#90CAF9" />
+          <Text style={[styles.navText, { color: '#90CAF9' }]}>Profile</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.navItem}>
+          <MaterialCommunityIcons name="theme-light-dark" size={24} color="#90CAF9" />
+          <Text style={[styles.navText, { color: '#90CAF9' }]}>Theme</Text>
+        </TouchableOpacity>
       </View>
+
+      <Portal>
+        <Dialog visible={dialogVisible} onDismiss={hideDialog}>
+          <Dialog.Title>Confirm Logout</Dialog.Title>
+          <Dialog.Content>
+            <Text>Are you sure you want to log out?</Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <PaperButton onPress={hideDialog}>Cancel</PaperButton>
+            <PaperButton onPress={handleLogout}>Logout</PaperButton>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
     </Surface>
   );
 }
 
 const styles = StyleSheet.create({
-  surface: {
+  container: {
+    flex: 1,
+    backgroundColor: '#ffffff', // White background for modern look
+  },
+  scrollContentContainer: {
+    padding: 16,
+    paddingBottom: 80, // Ensure space at the bottom for navigation
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingVertical: 10,
+  },
+  headerLeft: {
+    width: 40,
+    alignItems: 'flex-start',
+  },
+  headerCenter: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
-    padding: 0,
   },
-  headerContainer: {
-    width: '100%',
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    paddingTop: 12,
-    paddingBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 1,
-    elevation: 2,
+  headerRight: {
+    width: 40,
+    alignItems: 'flex-end',
   },
-  headerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-  },
-  logoContainer: {
-    backgroundColor: '#fff',
-    borderRadius: 24,
-    padding: 3,
-    borderWidth: 2,
-    borderColor: '#1976d2',
-  },
-  logoImage: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#0D47A1',
   },
   greetingContainer: {
-    flex: 1,
-    paddingHorizontal: 16,
+    marginBottom: 32,
   },
-  greetingText: {
-    color: '#0D1B2A',
-    fontSize: 18,
+  greeting: {
+    fontSize: 32,
+    fontWeight: '400',
+    color: '#0D47A1',
+  },
+  userName: {
+    fontSize: 28,
     fontWeight: 'bold',
-    letterSpacing: 0.5,
+    color: '#0D47A1',
+    marginTop: 4,
   },
-  logoutButton: {
+  sectionTitle: {
+    fontSize: 24,
+    fontWeight: '600',
+    marginBottom: 16,
+    color: '#0D47A1',
+  },
+  shortcutsContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#d32f2f',
-    paddingVertical: 5,
-    paddingHorizontal: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 1,
-    elevation: 1,
+    marginBottom: 32,
+    paddingLeft: 4,
+    paddingRight: 16,
   },
-  logoutText: {
-    color: '#d32f2f',
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
-  card: {
+  activityCard: {
+    marginBottom: 12,
     borderRadius: 16,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    overflow: 'hidden',
+    borderColor: '#f0f0f0',
     borderWidth: 1,
-    borderColor: '#e3e7ef',
-  },
-  cardTitle: {
-    fontWeight: 'bold',
-    fontSize: 18,
-    color: '#d32f2f',
-    marginBottom: 8,
-    letterSpacing: 0.5,
   },
   activityItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-    paddingBottom: 8,
+    backgroundColor: '#fff',
+    padding: 16,
   },
   activityIconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
+    padding: 8,
+    borderRadius: 20,
+    marginRight: 16,
   },
   activityContent: {
     flex: 1,
   },
   activityText: {
-    fontSize: 14,
-    color: '#333',
+    fontSize: 16,
     fontWeight: '500',
+    color: '#0D47A1',
   },
   activityTime: {
-    fontSize: 12,
-    color: '#888',
+    fontSize: 14,
+    color: '#1976d2',
     marginTop: 4,
   },
   emptyActivity: {
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 20,
+    paddingVertical: 40,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
+  },
+  heatCard: {
+    marginBottom: 32,
+    elevation: 2,
+    borderRadius: 16,
+    backgroundColor: '#ffffff',
+    padding: 16,
+  },
+  heatTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#0D47A1',
+  },
+  heatScoreText: {
+    marginTop: 12,
+    textAlign: 'center',
+    fontSize: 16,
+    color: '#1976d2',
+    fontWeight: '500',
+  },
+  placeholderText: {
+    textAlign: 'center',
+    color: '#1976d2',
+    marginTop: 24,
+    fontSize: 18,
+  },
+  bottomNavigation: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#ffffff',
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0',
+  },
+  navItem: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  navText: {
+    fontSize: 12,
+    marginTop: 4,
+    color: '#0D47A1',
+    fontWeight: '500',
   },
 });
