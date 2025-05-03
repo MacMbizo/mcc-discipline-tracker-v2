@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Surface, Text, useTheme, Dialog, Portal, Button as PaperButton, IconButton, Card, Avatar } from 'react-native-paper';
-import { Image, Animated, Easing } from 'react-native';
+import { Image, Animated, Easing, RefreshControl } from 'react-native';
 import { StyleSheet, View, TouchableOpacity, ScrollView } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
@@ -178,6 +178,12 @@ const HomeScreen = ({ navigation }: HomeScreenProps) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchData();
+    setRefreshing(false);
+  }, [fetchData]);
+
   const fetchData = useCallback(async () => {
     if (!user) return;
     setLoading(true);
@@ -207,10 +213,7 @@ const HomeScreen = ({ navigation }: HomeScreenProps) => {
     fetchData();
   }, [fetchData]);
 
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    fetchData().then(() => setRefreshing(false));
-  }, [fetchData]);
+  
 
   // const currentUser = auth.currentUser; // Remove this line
 
@@ -219,7 +222,10 @@ const HomeScreen = ({ navigation }: HomeScreenProps) => {
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        <RefreshControl 
+          refreshing={refreshing} 
+          onRefresh={onRefresh}
+        />
       }
     >
       {loading ? (
