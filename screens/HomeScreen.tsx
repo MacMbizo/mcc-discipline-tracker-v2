@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Surface, Text, useTheme, Dialog, Portal, Button as PaperButton, IconButton, Card, Avatar } from 'react-native-paper';
 import { Image, Animated, Easing } from 'react-native';
 import { StyleSheet, View, TouchableOpacity, ScrollView } from 'react-native';
@@ -171,15 +171,56 @@ function RecentActivity() {
 
 const HomeScreen = ({ navigation }: HomeScreenProps) => {
   const theme = useTheme();
+  const { user } = useAuth(); // Use the hook to get the user object
   const [stats, setStats] = useState({ totalIncidents: 0, meritsAwarded: 0, uniqueStudents: 0 });
+  const [incidents, setIncidents] = useState<Incident[]>([]);
+  const [merits, setMerits] = useState<Merit[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const currentUser = auth.currentUser;
+
+  const fetchData = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
+    try {
+      const incidentsQuery = query(collection(db, 'incidents'), where('teacherId', '==', user.uid));
+      const meritsQuery = query(collection(db, 'merits'), where('teacherId', '==', user.uid));
+
+      const [incidentsSnapshot, meritsSnapshot] = await Promise.all([
+        getDocs(incidentsQuery),
+        getDocs(meritsQuery),
+      ]);
+
+      const incidentsData = incidentsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Incident[];
+      const meritsData = meritsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Merit[];
+
+      setIncidents(incidentsData);
+      setMerits(meritsData);
+    } catch (error) {
+      console.error("Error fetching data: ", error);
+      // Handle error appropriately, maybe show a snackbar
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchData().then(() => setRefreshing(false));
+  }, [fetchData]);
+
+  // const currentUser = auth.currentUser; // Remove this line
 
   return (
     <ScrollView
       style={styles.container}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      contentContainerStyle={styles.contentContainer}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
     >
       {loading ? (
         <ActivityIndicator animating={true} size="large" style={styles.loader} />
